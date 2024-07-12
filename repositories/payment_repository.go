@@ -8,21 +8,21 @@ import (
 	"github.com/google/uuid"
 )
 
-type PaymentRepository struct {
+type PaymentRepositoryImpl struct {
 	db *sql.DB
 }
 
-func NewPaymentRepository(db *sql.DB) *PaymentRepository {
-	return &PaymentRepository{db}
+func NewPaymentRepository(db *sql.DB) *PaymentRepositoryImpl {
+	return &PaymentRepositoryImpl{db}
 }
 
-func (r *PaymentRepository) CreatePayment(req *payment_service.CreatePaymentRequest) (*payment_service.CreatePaymentResponse, error) {
+func (r *PaymentRepositoryImpl) CreatePayment(req *payment_service.CreatePaymentRequest) (*payment_service.CreatePaymentResponse, error) {
 	query := `
 		INSERT INTO Payments (id, reservation_id, amount, payment_method, payment_status)
 		VALUES ($1, $2, $3, $4, $5)
 	`
 	id := uuid.NewString()
-	_, err := r.db.Exec(query, id, &req.Payment.ReservationId, req.Payment.Amount, req.Payment.PaymentMethod, req.Payment.PaymentStatus)
+	_, err := r.db.Exec(query, id, req.Payment.ReservationId, req.Payment.Amount, req.Payment.PaymentMethod, req.Payment.PaymentStatus)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func (r *PaymentRepository) CreatePayment(req *payment_service.CreatePaymentRequ
 	return &payment_service.CreatePaymentResponse{Payment: req.Payment}, nil
 }
 
-func (r *PaymentRepository) GetPayment(req *payment_service.GetPaymentRequest) (*payment_service.GetPaymentResponse, error) {
+func (r *PaymentRepositoryImpl) GetPayment(req *payment_service.GetPaymentRequest) (*payment_service.GetPaymentResponse, error) {
 	query := `
 		SELECT id, reservation_id, amount, payment_method, payment_status, created_at, updated_at 
 		FROM Payments WHERE id = $1 AND deleted_at IS NULL
@@ -50,7 +50,7 @@ func (r *PaymentRepository) GetPayment(req *payment_service.GetPaymentRequest) (
 	return &payment_service.GetPaymentResponse{Payment: payment}, nil
 }
 
-func (r *PaymentRepository) ListPayments(req *payment_service.ListPaymentsRequest) (*payment_service.ListPaymentsResponse, error) {
+func (r *PaymentRepositoryImpl) ListPayments(req *payment_service.ListPaymentsRequest) (*payment_service.ListPaymentsResponse, error) {
 	query := `
 		SELECT id, reservation_id, amount, payment_method, payment_status, created_at, updated_at
 		FROM Payments WHERE reservation_id = $1 AND payment_method = $2 AND payment_status = $3 AND deleted_at IS NULL
@@ -75,7 +75,7 @@ func (r *PaymentRepository) ListPayments(req *payment_service.ListPaymentsReques
 	return &payment_service.ListPaymentsResponse{Payments: payments}, nil
 }
 
-func (r *PaymentRepository) UpdatePayment(req *payment_service.UpdatePaymentRequest) (*payment_service.UpdatePaymentResponse, error) {
+func (r *PaymentRepositoryImpl) UpdatePayment(req *payment_service.UpdatePaymentRequest) (*payment_service.UpdatePaymentResponse, error) {
 	query := `
 		UPDATE Payments SET reservation_id = $1, amount = $2, payment_method = $3, payment_status = $4, updated_at = now()
 		WHERE id = $5 AND deleted_at IS NULL
@@ -88,7 +88,7 @@ func (r *PaymentRepository) UpdatePayment(req *payment_service.UpdatePaymentRequ
 	return &payment_service.UpdatePaymentResponse{Payment: req.Payment}, nil
 }
 
-func (r *PaymentRepository) DeletePayment(req *payment_service.DeletePaymentRequest) (*payment_service.DeletePaymentResponse, error) {
+func (r *PaymentRepositoryImpl) DeletePayment(req *payment_service.DeletePaymentRequest) (*payment_service.DeletePaymentResponse, error) {
 	query := `UPDATE Payments SET deleted_at = now() WHERE id = $1`
 	_, err := r.db.Exec(query, req.Id)
 	if err != nil {
